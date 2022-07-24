@@ -1,20 +1,25 @@
 import { TodosAccess } from '../dataLayer/todosAcess'
-import { AttachmentUtils } from '../helpers/attachmentUtils';
+//import { AttachmentUtils } from '../helpers/attachmentUtils';
 import { TodoItem } from '../models/TodoItem'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
-import * as createError from 'http-errors'
+import { parseUserId } from '../auth/utils';
+import { TodoUpdate } from '../models/TodoUpdate';
+
 
 // TODO: Implement businessLogic
 const todosAccess = new TodosAccess()
+const logger = createLogger("TODOS")
 
 export async function getTodosForUser(userId:String):Promise<TodoItem[]>{
+    logger.info("Getting todos for particular user of ID: " + JSON.stringify(userId))
     return todosAccess.getTodosForUser(userId)
 }
 
-export async function createTodo(createTodoRequest:CreateTodoRequest, username: String): Promise<TodoItem[]>{
+export async function createTodo(createTodoRequest:CreateTodoRequest, userId: string): Promise<TodoItem>{
+    logger.info("Creating new todo")
     const todoId = uuid.v4()
 
     var newTodo : TodoItem = {
@@ -22,29 +27,28 @@ export async function createTodo(createTodoRequest:CreateTodoRequest, username: 
         name: createTodoRequest.name,
         createdAt: new Date().toISOString(),
         done: false,
-        userId: username,
+        userId: userId,
         todoId: todoId
-    } as TodoItem
+    } as TodoItem 
 
-    var createdTodo = await todosAccess.createTodo(newTodo)
+    const createdTodo =  await todosAccess.createTodo(newTodo)
     return createdTodo
+    
 }
-export async function deleteTodo( todoId: string, userId: String): Promise<Boolean> {
+export async function deleteTodo( todoId: string, userId: String): Promise<string> {
+    logger.info('Deleting todo of ID: ' + JSON.stringify(todoId))
     await todosAccess.deleteTodo(todoId, userId)
-    return true
+    const response = "Deleted Todo of ID: " + JSON.stringify(todoId)
+    return response
 }
 
-export async function getAllTodoItems(userId: String): Promise<TodoItem[]> {
-    const allTodos = await todosAccess.getAllTodos(userId)
-    return allTodos
-}
 
-export async function updateTodoItem(todoId: String, userId: String, todoUpdateRequest: UpdateTodoRequest): Promise<Boolean> {
-    const updatedTodo = await todosAccess.updateTodo(
-        todoId, 
-        todoUpdateRequest.name,
-        todoUpdateRequest.done, 
-        todoUpdateRequest.dueDate,
-        userId)
+export async function updateTodoItem(todoId: string, userId: string, todoUpdateRequest: UpdateTodoRequest): Promise<TodoUpdate> {
+    logger.info("Updating todo of ID: " + JSON.stringify(todoId))
+    const updatedTodo = await todosAccess.updateTodo(todoUpdateRequest, todoId, userId)
     return updatedTodo
+}
+
+export function generateUploadUrl(todoId: string): Promise<string> {
+    return todosAccess.generateUploadUrl(todoId);
 }
