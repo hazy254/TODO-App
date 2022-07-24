@@ -1,5 +1,5 @@
 # TODO: Change the name of the org 
-org: Juma_Udagram
+org: Juma_Serverless
 app: serverless-todo-app
 service: serverless-todo-app
 
@@ -31,7 +31,11 @@ provider:
     SIGNED_URL_EXPIRATION: 300
   custom:
     documentation:
-
+      api:
+        info:
+          version: '1.0.0'
+          title: serverless-api
+          description: serverless-api
   logs:
     # Enable API Gateway logs
     restApi: true
@@ -110,12 +114,20 @@ functions:
           path: todos/{todoId}
           cors: true
           authorizer: Auth
+          request:
+            schemas:
+              application/json: ${file(models/update-todo-model.json)}
     iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:UpdateItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+        Resource: 
+          - '*'
 
   # TODO: Configure this function
   # Provide property for setting up CORS, Authorizer, iamRoleStatements
