@@ -4,6 +4,7 @@ import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate';
+// import { Types } from 'aws-sdk/clients/s3';
 
 const XAWS = AWSXRay.captureAWS(AWS)
 
@@ -13,10 +14,11 @@ const XAWS = AWSXRay.captureAWS(AWS)
 export class TodosAccess{
     constructor(
         private readonly docClient : DocumentClient = new XAWS.DynamoDB.DocumentClient(),
-        private readonly todoTable = process.env.TODO_TABLE,
+        private readonly todoTable = process.env.TODOS_TABLE,
         private readonly indexName = process.env.SECONDARY_INDEX,
         private readonly LOGGER = createLogger("TODOITEM_ACCESS"),
         private readonly s3Bucket = process.env.ATTACHMENT_S3_BUCKET
+       // private readonly s3Client: Types = new XAWS.S3({ signatureversion: 'v4 '})
         ) {}
     async getTodosForUser(userId:String) {
         this.LOGGER.info("Get all Todos made by a particular user")
@@ -83,15 +85,13 @@ export class TodosAccess{
             },
             ReturnValues: "ALL_NEW"
         };
-        const result = await this.docClient.update(args).promise
+        const result = await this.docClient.update(args).promise();
         this.LOGGER.info("Update successful with res: " + JSON.stringify(result))
         return result.Attributes as TodoUpdate
     }
     async generateUploadUrl(todoId: string): Promise<string> {
         this.LOGGER.info("Generating S3 Signed URL");
-        const s3Client = new XAWS.S3({
-            signatureVersion: 'v4'
-        })
+        const s3Client = new XAWS.S3({ signatureVersion: 'v4' })
         const url = s3Client.getSignedUrl('putObject', {
             Bucket: this.s3Bucket,
             Key: todoId,
