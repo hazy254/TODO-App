@@ -15,7 +15,9 @@ export const handler = middy(
     return {
       statusCode: 201,
       headers: {
-          "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers" : "*",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*"
       },
       body: JSON.stringify({
           "item": todoItem
