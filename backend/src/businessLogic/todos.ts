@@ -5,7 +5,6 @@ import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
-import { parseUserId } from '../auth/utils';
 import { TodoUpdate } from '../models/TodoUpdate';
 
 
@@ -21,14 +20,15 @@ export async function getTodosForUser(userId:String):Promise<TodoItem[]>{
 export async function createTodo(createTodoRequest:CreateTodoRequest, userId: string): Promise<TodoItem>{
     logger.info("Creating new todo")
     const todoId = uuid.v4()
-
+    const s3BucketName = process.env.ATTACHMENT_S3_BUCKET
     var newTodo : TodoItem = {
         dueDate: createTodoRequest.dueDate,
         name: createTodoRequest.name,
         createdAt: new Date().toISOString(),
         done: false,
         userId: userId,
-        todoId: todoId
+        todoId: todoId,
+        attachmentUrl:  `https://${s3BucketName}.s3.amazonaws.com/${todoId}`
     } as TodoItem 
 
     const createdTodo =  await todosAccess.createTodo(newTodo)
